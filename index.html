@@ -4,36 +4,66 @@
 	<title>Codebits</title>
 
 <script src="/socket.io/socket.io.js"></script>
+
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="http://malsup.github.com/jquery.blockUI.js"></script>
+
+<style type="text/css">
+
+	#canvas{
+		width: 3200;
+		height: 2000;
+	}
+
+</style>
 
 <script>
 
-    //receber matriz e atualizar html
     $(document).ready(function() {
 
-		var socket = io.connect('176.78.10.147');
+		$.blockUI({ css: { 
+            border: 'none', 
+            padding: '15px', 
+            backgroundColor: '#000', 
+            '-webkit-border-radius': '10px', 
+            '-moz-border-radius': '10px', 
+            opacity: .5, 
+            color: '#fff' 
+    		} 
+    	}); 
+
+
+		var socket = io.connect('176.78.4.221');
   		s = socket.on('welcome', function (data) {
 
 	    	matrix = data.matrix;
-		    for(i = 0; i < matrix.length; i++) {
-				$('#pixelTable tr:last').after('<tr id="row' + i + '"><td></td></tr>');
-		    	for(z = 0; z < matrix[i].length; z++) {
-		    		bla = $('<td style="background:'+ matrix[i][z].color + '"><div>' + matrix[i][z].username + '</div></td>');
-		    		$('#row'+i + ' td:last').after(bla);
-		    		bla.click(function() {
-		    			$(this).css("background", "white");
-		    			s.emit("newPixelFromClient", { pixelFromClient: {x: 6, y: 6, color: "#FFFFFF", username: "pai natal"} });
-		    		})
-		    	}
-		    }
+
+	    	var context = $('#canvas').get(0).getContext("2d");
+
+	    	for(i=0; i<matrix.length;i++) {
+	    		for(j=0; j<matrix[i].length;j++) {
+	    			context.strokeRect(j*20, i*20, 20, 20);
+	    		}
+	    	}   
+
+	    	$.unblockUI();
+
+	    	$("#canvas").click(function(e){
+ 				var x = Math.floor((e.pageX-$("#canvas").offset().left) / 20);
+ 				var y = Math.floor((e.pageY-$("#canvas").offset().top) / 20);
+ 				context.fillStyle = "rgb(0,0,0)";
+ 				context.fillRect(x*20, y*20, 20, 20);
+
+			}); 
+
   		});
+
   	});
 </script>
 </head>
-<body style="background: black">
-	<table id="pixelTable">
-		<tr>
-		</tr>
-	</table>
+<body style="background: white">
+	<div id="username"></div>
+	<canvas id="canvas"></canvas>
+	
 </body>
 </html>
