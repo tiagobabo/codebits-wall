@@ -8,33 +8,29 @@
 
 <script>
 
-  	
     //receber matriz e atualizar html
     $(document).ready(function() {
 
-		var socket = io.connect('http://localhost');
+		var socket = io.connect('176.78.10.147');
   		s = socket.on('welcome', function (data) {
 
-    	console.log(data);
-
-    	matrix = data.matrix;
-
-	    for(i = 0; i < matrix.length(); i++) {
-			$('#pixelTable tr:last').after('<tr id="row' + i + '"><td></td></tr>');
-	    	for(z = 0; z < matrix[i].length(); z++) {
-	    		$('#row'+i + ' td:last').after('<td style="background="'+ matrix[i][z].color + '"">
-	    			<div>
-	    			' + matrix[i][z].username + '
-	    			</div>
-	    			</td>');
-	    	}
-	    }
+	    	matrix = data.matrix;
+		    for(i = 0; i < matrix.length; i++) {
+				$('#pixelTable tr:last').after('<tr id="row' + i + '"><td></td></tr>');
+		    	for(z = 0; z < matrix[i].length; z++) {
+		    		bla = $('<td style="background:'+ matrix[i][z].color + '"><div>' + matrix[i][z].username + '</div></td>');
+		    		$('#row'+i + ' td:last').after(bla);
+		    		bla.click(function() {
+		    			$(this).css("background", "white");
+		    			s.emit("newPixelFromClient", { pixelFromClient: {x: 6, y: 6, color: "#FFFFFF", username: "pai natal"} });
+		    		})
+		    	}
+		    }
+  		});
   	});
 </script>
 </head>
-<body onclick="s.emit('newPixel', { my: 'data' });alert('a');">
-	BLA
-
+<body style="background: black">
 	<table id="pixelTable">
 		<tr>
 		</tr>
