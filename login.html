@@ -1,0 +1,283 @@
+<html>
+<head>
+<title>Codebits Wall</title>
+
+<meta name="viewport" content="width=device-width" />
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="http://malsup.github.com/jquery.blockUI.js"></script>
+<script src="http://paginas.fe.up.pt/~ei08118/jquery.colorPicker.js"/></script>
+
+<link rel="stylesheet" href="http://paginas.fe.up.pt/~ei08118/foundation.min.css">
+<link rel="stylesheet" href="http://paginas.fe.up.pt/~ei08118/app.css">
+
+<style type="text/css">
+@font-face {
+    font-family: 'Gotham';
+    src: local('Gotham'), url('http://paginas.fe.up.pt/~ei08118/ufonts.com_gotham-bold.ttf') format("truetype");
+}
+
+body{	
+	background-color: #000000;
+
+}
+
+.row{
+	height: 100%;	
+	vertical-align: middle;
+}
+
+.seven.columns.centered{
+	top:25%;	
+}
+
+fieldset legend{
+	font-family: Gotham;
+	background: none;
+	font-size: 35px;
+	color: #50b748;
+}
+
+label{
+	font-family: Gotham;
+	background: none;
+	color: #50b748;
+
+}
+
+div.colorPicker-picker {
+	  height: 50px;
+	  width: 50px;
+	  padding: 0 !important;
+	  border: 1px solid #ccc;
+	  background: url(arrow.gif) no-repeat top right;
+	  cursor: pointer;
+	  line-height: 16px;
+	}
+
+	div.colorPicker-palette {
+	  width: 120px;
+	  position: fixed;
+	  border: 1px solid #598FEF;
+	  background-color: #EFEFEF;
+	  padding: 2px;
+	  z-index: 9999;
+	  top: 50px;
+	}
+	 
+	div.colorPicker-swatch {
+	  height: 12px;
+	  width: 12px;
+	  border: 1px solid #000;
+	  margin: 2px;
+	  float: left;
+	  cursor: pointer;
+	  line-height: 12px;
+	}
+
+	#canvas-wrap{
+		position: relative;
+		margin-top: 100px;
+	}
+
+	#username { 
+		position:fixed; 
+		padding-right: 5px;
+		height: 20px;
+		top:10px; 
+		right:10px; 
+		color:white;
+	}
+
+	#pallete {
+		position:fixed; 
+		padding-right: 5px;
+		height: 20px;
+		top:10px; 
+		left:10px; 
+		background: black;
+		color:white;
+	} 
+
+	#logo {
+		position: fixed;
+		right: 50%;
+		top: 10px;
+	}
+</style>
+
+<title>
+CodeBits Wall
+</title>
+</head>
+<body>
+	<div class="row">
+		<div class= "seven columns centered">
+			<form>
+			  <fieldset>
+			    <legend>CODEBITS Wall</legend>
+			    <label>Login (same as codebits)</label>
+			    <input id = "emailField" type="text" placeholder="Login@email.com" />
+			    
+			    <label>Password</label>
+			    <input id = "passwordField" type="password" placeholder="Password" />
+			    <small class="error" style="display: none;">Invalid Login or Password</small>
+				<div class= "four columns centered">
+			    	<button type="button"  class="success button">Login</div>
+			    	<br>
+			    </div>
+			    <br>
+			  </fieldset>
+			</form>
+		</div>
+	</div>
+	<div id="canvas-wrap">
+		<div id="username"></div>
+		<div id="logo">
+			<img src="https://codebits.eu/imgs/v2/logo_light.png"/>
+		</div>
+		<div id="pallete" class="controlset"><input id="picker" type="text" name="picker" value="#ffffff" /></div>
+		<canvas id="canvas" width="6400" height="4000"></canvas>
+	</div>
+<script>
+
+$(document).ready(function(){
+		
+		$('#canvas-wrap').hide();
+
+		$(".success.button").bind('click', function() {
+			authentication();
+		});
+		$("#passwordField").bind('keypress', function(e) {
+			if(e.keyCode==13){
+				authentication();
+			}
+		});
+
+		function authentication(){
+			$.getJSON(  
+            "https://services.sapo.pt/Codebits/gettoken?callback=?", { user: $("#emailField").val(), password: $("#passwordField").val() }, 
+            function(responseText){  
+				if(!responseText.error){
+					$.getJSON(  
+					"https://services.sapo.pt/Codebits/user/"+responseText.uid+"?callback=?", { token: responseText.token},
+					function(responseText1){
+						$('.row').hide();
+						$('#canvas-wrap').show();
+						user_avatar = responseText1.avatar;
+						initBoard();
+						console.log(responseText1);
+						console.log(responseText1.id + "    "+ responseText1.nick);
+					},  
+					"json"  
+					); 
+				}else {
+					$('small').show('slow');
+					setTimeout(function(){$('small').hide('slow');},3000)
+				}
+            },  
+            "json"  
+			); 
+		}
+         
+ });
+
+function initBoard() {
+	$.blockUI({ css: { 
+            border: 'none', 
+            padding: '15px', 
+            backgroundColor: '#FFFFFF', 
+            '-webkit-border-radius': '10px', 
+            '-moz-border-radius': '10px',  
+            color: '#000000',
+            opacity: 0.5 
+    		} 
+    	}); 
+
+    	$('#picker').colorPicker();
+
+		var socket = io.connect('localhost');
+  		s = socket.on('welcome', function (data) {
+
+	    	matrix = data.matrix;
+
+	    	context = $('#canvas').get(0).getContext("2d");
+
+	    	for(i=0; i<matrix.length;i++) {
+	    		for(j=0; j<matrix[i].length;j++) {
+	    			context.fillStyle = matrix[i][j].color;
+	    			context.fillRect(j*20, i*20, 20, 20);
+	    		}
+	    	}   
+
+	    	$.unblockUI();
+
+	    	$("#canvas").mousedown(function(e){
+ 				makePixel(context, e);
+			}); 
+
+			previousX = -1;
+			previousY = -1;
+			previousColor = "";
+
+			$("#canvas").mousemove(function(e){
+				if(!mouseDown)
+				{
+					var x = Math.floor((e.pageX-$("#canvas").offset().left) / 20);
+	 				var y = Math.floor((e.pageY-$("#canvas").offset().top) / 20);
+	 				if(matrix[y][x].username != "no_avatar")
+	 					$('#username').html('<img src="' + matrix[y][x].username + '" width="50px" height="50px" />');
+	 				else
+	 					$('#username').html("");
+	 				context.fillStyle = $('#picker').val();
+	 				context.fillRect(x*20, y*20, 20, 20);
+
+	 				if(previousX != x || previousY != y) {
+						context.fillStyle = previousColor;
+	 					context.fillRect(previousX*20, previousY*20, 20, 20); 					
+ 				}
+
+	 				previousX = x;
+	 				previousY = y;
+	 				previousColor = matrix[y][x].color;
+	 			}
+	 			else {
+	 				if(previousX != x || previousY != y) {
+						makePixel(context, e);					
+	 				}
+	 				previousX = -1;
+	 				previousY = -1;
+	 			}
+
+ 			});
+  		});
+
+  		s = socket.on('newPixelFromServer', function (data) {
+ 				context.fillStyle = data.pixelFromServer.color;
+ 				context.fillRect(data.pixelFromServer.x*20, data.pixelFromServer.y*20, 20, 20);
+ 				matrix[data.pixelFromServer.y][data.pixelFromServer.x] = data.pixelFromServer;
+  		});
+
+  		mouseDown = 0;
+		document.body.onmousedown = function() { 
+ 		 	mouseDown = 1;
+		}
+		document.body.onmouseup = function() {
+  			mouseDown = 0;
+		}
+	
+	}
+
+	function makePixel(context, e) {
+		var x = Math.floor((e.pageX-$("#canvas").offset().left) / 20);
+		var y = Math.floor((e.pageY-$("#canvas").offset().top) / 20);
+		context.fillStyle = $('#picker').val();
+		context.fillRect(x*20, y*20, 20, 20);
+		s.emit('newPixelFromClient', { pixelFromClient : { x : x, y : y, color : $('#picker').val(), username : user_avatar}});
+	}
+
+</script>
+</body>
+</html>
+
